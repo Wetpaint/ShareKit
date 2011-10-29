@@ -65,7 +65,7 @@
 
 + (NSString *)sharerTitle
 {
-	return @"Twitter";
+	return @"Share on Twitter";
 }
 
 + (BOOL)canShareURL
