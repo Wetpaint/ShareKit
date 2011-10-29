@@ -29,11 +29,19 @@
 #import <MessageUI/MessageUI.h>
 #import "SHKSharer.h"
 
-@interface SHKTextMessage : SHKSharer <MFMessageComposeViewControllerDelegate>
+@interface SHKMessageComposeViewController : MFMessageComposeViewController
 {
 	
 }
 
-- (BOOL)sendText;
+@end
+
+
+@interface SHKSMS : SHKSharer <MFMessageComposeViewControllerDelegate>
+{
+	
+}
+
+- (void)sendText;
 
 @end
