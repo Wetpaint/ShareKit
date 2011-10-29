@@ -288,7 +288,7 @@ BOOL SHKinit;
 		switch (type) 
 		{
 			case SHKShareTypeURL:
-				favoriteSharers = [NSArray arrayWithObjects:@"SHKTwitter",@"SHKFacebook",@"SHKReadItLater",nil];
+				favoriteSharers = [NSArray arrayWithObjects:@"SHKFacebook",@"SHKTwitter",@"SHKMail",@"SHKSMS",nil];
 				break;
 				
 			case SHKShareTypeImage:
@@ -335,8 +335,11 @@ BOOL SHKinit;
 {
 	NSMutableArray *favs = [[self favoriteSharersForType:type] mutableCopy];
 	
-	[favs removeObject:className];
-	[favs insertObject:className atIndex:0];
+    // This code re-prioritizes the sharing options based on what the user uses
+	// the most. To provide that funcationality again, uncomment this code
+	
+    //[favs removeObject:className];
+	//[favs insertObject:className atIndex:0];
 	
 	while (favs.count > [SHKCONFIG(maxFavCount) intValue])
 		[favs removeLastObject];
