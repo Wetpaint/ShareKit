@@ -72,7 +72,8 @@
 	}
 	
 	// Add More button
-	[as addButtonWithTitle:SHKLocalizedString(@"More...")];
+    // We do not want to provide all the share kit options
+    //[as addButtonWithTitle:SHKLocalizedString(@"More...")];
 	
 	// Add Cancel button
 	[as addButtonWithTitle:SHKLocalizedString(@"Cancel")];
@@ -87,6 +88,14 @@
 	as.item = i;
 	return as;
 }
+
++ (SHKActionSheet *)actionSheetForItem:(SHKItem *)i withTitle:(NSString *)title
+{
+    SHKActionSheet *as = [self actionSheetForItem:i];
+	[as setTitle:title];
+	return as;
+}
+
 
 - (void)dismissWithClickedButtonIndex:(NSInteger)buttonIndex animated:(BOOL)animated
 {

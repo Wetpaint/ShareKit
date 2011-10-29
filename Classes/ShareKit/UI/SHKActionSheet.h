@@ -43,5 +43,6 @@
 
 + (SHKActionSheet *)actionSheetForType:(SHKShareType)type;
 + (SHKActionSheet *)actionSheetForItem:(SHKItem *)i;
++ (SHKActionSheet *)actionSheetForItem:(SHKItem *)i withTitle:(NSString *)title;
 
 @end
