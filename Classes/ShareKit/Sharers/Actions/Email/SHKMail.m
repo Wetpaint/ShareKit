@@ -28,21 +28,16 @@
 #import "SHKConfiguration.h"
 #import "SHKMail.h"
 
+@implementation SHKMailComposeViewController
 
-@implementation MFMailComposeViewController (SHK)
-
-- (void)SHKviewDidDisappear:(BOOL)animated
-{	
+- (void)viewDidDisappear:(BOOL)animated
+{
 	[super viewDidDisappear:animated];
-	
-	// Remove the SHK view wrapper from the window (but only if the view doesn't have another modal over it)
-	if (self.modalViewController == nil)
-		[[SHK currentHelper] viewWasDismissed];
+	// Remove the SHK view wrapper from the window
+	[[SHK currentHelper] viewWasDismissed];
 }
 
 @end
-
-
 
 @implementation SHKMail
 
@@ -51,7 +46,7 @@
 
 + (NSString *)sharerTitle
 {
-	return SHKLocalizedString(@"Email");
+	return SHKLocalizedString(@"Share via Email");
 }
 
 + (BOOL)canShareText
@@ -98,7 +93,62 @@
 	return YES;
 }
 
+#pragma mark - URL Shortening
 
+- (void)shortenURL
+{	
+	
+	if (![SHK connected]) {
+		[item setCustomValue:[NSString stringWithFormat:@"%@ %@", item.title, [item.URL.absoluteString stringByReplacingPercentEscapesUsingEncoding:NSUTF8StringEncoding]] forKey:@"bitly-link"];
+		
+		[self sendMail];	
+		return;
+		
+	}
+    
+	if (!quiet)
+		[[SHKActivityIndicator currentIndicator] displayActivity:SHKLocalizedString(@"Shortening URL...")];
+	
+	self.request = [[[SHKRequest alloc] initWithURL:[NSURL URLWithString:[NSMutableString stringWithFormat:@"http://api.bit.ly/v3/shorten?login=%@&apikey=%@&longUrl=%@&format=txt",
+																		  SHKBitLyLogin,
+																		  SHKBitLyKey,																		  
+																		  SHKEncodeURL(item.URL)
+																		  ]]
+											 params:nil
+										   delegate:self
+								 isFinishedSelector:@selector(shortenURLFinished:)
+											 method:@"GET"
+										  autostart:YES] autorelease];
+}
+
+- (void)shortenURLFinished:(SHKRequest *)aRequest
+{
+	[[SHKActivityIndicator currentIndicator] hide];
+	
+	NSString *result = [[aRequest getResult] stringByTrimmingCharactersInSet:[NSCharacterSet newlineCharacterSet]];
+	
+	if (result == nil || [NSURL URLWithString:result] == nil)
+	{
+		[[[[UIAlertView alloc] initWithTitle:SHKLocalizedString(@"Shorten URL Error")
+									 message:SHKLocalizedString(@"We could not shorten the URL.")
+									delegate:nil
+						   cancelButtonTitle:SHKLocalizedString(@"Continue")
+						   otherButtonTitles:nil] autorelease] show];
+		
+		[item setCustomValue:[NSString stringWithFormat:@"%@ %@", item.text ? item.text : item.title, [item.URL.absoluteString stringByReplacingPercentEscapesUsingEncoding:NSUTF8StringEncoding]] forKey:@"bitly-link"];
+	}
+	
+	else
+	{		
+		///if already a bitly login, use url instead
+		if ([result isEqualToString:@"ALREADY_A_BITLY_LINK"])
+			result = [item.URL.absoluteString stringByReplacingPercentEscapesUsingEncoding:NSUTF8StringEncoding];
+		
+		[item setCustomValue:[NSString stringWithFormat:@"%@ %@", item.text ? item.text : item.title, result] forKey:@"bitly-link"];
+	}
+	
+	[self sendMail];
+}
 
 #pragma mark -
 #pragma mark Share API Methods
@@ -115,7 +165,8 @@
 
 - (BOOL)sendMail
 {	
-	MFMailComposeViewController *mailController = [[[MFMailComposeViewController alloc] init] autorelease];
+	SHKMailComposeViewController *mailController = [[[SHKMailComposeViewController alloc] init] autorelease];
+                                                    
 	if (!mailController) {
 		// e.g. no mail account registered (will show alert)
 		[[SHK currentHelper] hideCurrentViewControllerAnimated:YES];
@@ -131,17 +182,16 @@
 		if (item.text != nil)
 			body = item.text;
 		
-		if (item.URL != nil)
-		{	
-			NSString *urlStr = [item.URL.absoluteString stringByReplacingPercentEscapesUsingEncoding:NSUTF8StringEncoding];
+        if ([item customValueForKey:@"bitly-link"] != nil) {
 			
-			if (body != nil)
-				body = [body stringByAppendingFormat:@"<br/><br/>%@", urlStr];
+			if (body != nil) {
+				body = [body stringByAppendingFormat:@"<br/><br/>%@",[item customValueForKey:@"bitly-link"]];
+			} else {
+				body = [item customValueForKey:@"bitly-link"];
+			}
 			
-			else
-				body = urlStr;
 		}
-		
+        		
 		if (item.data)
 		{
 			NSString *attachedStr = SHKLocalizedString(@"Attached: %@", item.title ? item.title : item.filename);
