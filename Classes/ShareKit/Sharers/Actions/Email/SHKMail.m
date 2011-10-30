@@ -160,7 +160,8 @@
 	if (![self validateItem])
 		return NO;
 	
-	return [self sendMail]; // Put the actual sending action in another method to make subclassing SHKMail easier
+    [self shortenURL];
+    return YES;
 }
 
 - (BOOL)sendMail
